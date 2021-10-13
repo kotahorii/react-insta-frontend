@@ -19,6 +19,7 @@ export const useQueryProfiles = () => {
     queryKey: "profiles",
     queryFn: getProfiles,
     staleTime: 10000,
+    refetchInterval: 10000,
     refetchOnWindowFocus: true,
   });
 };

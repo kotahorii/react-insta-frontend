@@ -30,3 +30,8 @@ export type Token = {
   reflesh: string;
   access: string;
 };
+
+export type IFormInput = {
+  email: string;
+  password: string;
+};
