@@ -6,8 +6,8 @@ import { PropsAuthen, PropsNickname, ReturnedProfile, Token } from "../types";
 export const apiUrl = process.env.REACT_APP_DEV_API_URL;
 
 const initialState = {
-  openSignIn: true,
-  openSignUp: false,
+  openSignIn: false,
+  openSignUp: true,
   openProfile: false,
   isLoadingAuth: false,
 

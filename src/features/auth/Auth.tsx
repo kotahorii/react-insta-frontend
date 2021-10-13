@@ -1,5 +1,5 @@
 import { VFC } from "react";
-import Modal from "react-modal";
+
 import { useAppDispatch, useAppSelector } from "../../app/hooks";
 import { useForm, SubmitHandler } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
@@ -7,44 +7,45 @@ import styles from "./Auth.module.css";
 import * as yup from "yup";
 
 import {
+  selectIsLoadingAuth,
   selectOpenSignIn,
   selectOpenSignUp,
   resetOpenSignUp,
   fetchAsyncRegister,
   fetchAsyncLogin,
   fetchAsyncCreateProf,
-  selectProfile,
   fetchCredEnd,
+  setOpenSignIn,
+  resetOpenSignIn,
 } from "./authSlice";
-import { Button, TextField } from "@material-ui/core";
+
 import { useQueryMyProfile } from "../../hook/useQueryMyProfile";
 import { useQueryProfiles } from "../../hook/useQueryProfiles";
-import { useQueryClient } from "react-query";
-
-const customStyles = {
-  overlay: {
-    backgroundColor: "#777777",
-  },
-  content: {
-    top: "55%",
-    left: "50%",
-
-    width: 280,
-    height: 350,
-    padding: "50px",
-
-    transform: "translate(-50%, -50%)",
-  },
-};
+import { Button } from "@chakra-ui/button";
+import { Input } from "@chakra-ui/input";
+import {
+  Modal,
+  ModalBody,
+  ModalCloseButton,
+  ModalContent,
+  ModalFooter,
+  ModalHeader,
+  ModalOverlay,
+} from "@chakra-ui/modal";
+import { FormControl, FormErrorMessage } from "@chakra-ui/form-control";
+import { useDisclosure } from "@chakra-ui/hooks";
+import { Stack, StackDivider, VStack } from "@chakra-ui/layout";
+import { CircularProgress } from "@chakra-ui/progress";
 
 export const Auth: VFC = () => {
-  Modal.setAppElement("#root");
+  const isLoadingAuth = useAppSelector(selectIsLoadingAuth);
   const openSignIn = useAppSelector(selectOpenSignIn);
   const openSignUp = useAppSelector(selectOpenSignUp);
   const dispatch = useAppDispatch();
 
   const { data } = useQueryMyProfile();
   const { data: profiles } = useQueryProfiles();
+  const { isOpen, onOpen, onClose } = useDisclosure();
 
   type IFormInput = {
     email: string;
@@ -76,39 +77,77 @@ export const Auth: VFC = () => {
 
   return (
     <>
-      {/* <Modal
+      <Modal
         isOpen={openSignUp}
-        onRequestClose={() => {
+        onClose={() => {
           dispatch(resetOpenSignUp());
         }}
-        style={customStyles}
-      > */}
-      <form onSubmit={handleSubmit(onSubmit)}>
-        <div className={styles.auth_signUp}>
-          <h1 className={styles.auth_title}>SNS clone</h1>
-          <br />
-          <div className={styles.auth_progress}></div>
-          <br />
-          <TextField placeholder="email" type="input" {...register("email")} />
-          <p>{errors.email?.message}</p>
-          <br />
+      >
+        <ModalOverlay />
+        <ModalContent>
+          <ModalHeader>
+            <h1 className={styles.auth_title}>SNS clone</h1>
+            <br />
+            <div className={styles.auth_progress}>
+              {isLoadingAuth && (
+                <CircularProgress
+                  size="30px"
+                  isIndeterminate
+                  color="green.300"
+                />
+              )}
+            </div>
+          </ModalHeader>
+          <ModalBody>
+            <form onSubmit={handleSubmit(onSubmit)}>
+              <div className={styles.auth_signUp}>
+                <VStack spacing={3} align="stretch">
+                  <FormControl>
+                    <Input
+                      placeholder="email"
+                      type="input"
+                      {...register("email")}
+                    />
 
-          <TextField
-            placeholder="password"
-            type="password"
-            {...register("password")}
-          />
-          <p>{errors.password?.message}</p>
-          <br />
-        </div>
-        <Button type="submit">Register</Button>
-      </form>
-      {/* </Modal> */}
-      {profiles?.map((prof) => (
-        <div key={prof.id}>{prof.nickName}</div>
-      ))}
-      <br />
-      {data?.nickName}
+                    <div className={styles.auth_error}>
+                      {errors.email?.message}
+                    </div>
+                  </FormControl>
+                  <FormControl>
+                    <Input
+                      placeholder="password"
+                      type="password"
+                      {...register("password")}
+                    />
+                    <div className={styles.auth_error}>
+                      {errors.password?.message}
+                    </div>
+                  </FormControl>
+                  <Button
+                    type="submit"
+                    colorScheme="teal"
+                    isLoading={isLoadingAuth}
+                    variant="solid"
+                  >
+                    Register
+                  </Button>
+                </VStack>
+              </div>
+            </form>
+            <ModalFooter>
+              <span
+                className={styles.auth_text}
+                onClick={async () => {
+                  dispatch(setOpenSignIn());
+                  dispatch(resetOpenSignUp());
+                }}
+              >
+                you already have a account ?
+              </span>
+            </ModalFooter>
+          </ModalBody>
+        </ModalContent>
+      </Modal>
     </>
   );
 };
