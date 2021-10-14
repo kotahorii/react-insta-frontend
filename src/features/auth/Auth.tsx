@@ -1,6 +1,6 @@
-import { VFC, useState } from "react";
+import { VFC } from "react";
 
-import { useAppDispatch } from "../../app/hooks";
+import { useAppDispatch, useAppSelector } from "../../app/hooks";
 import { useForm, SubmitHandler } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import styles from "./Auth.module.css";
@@ -10,6 +10,14 @@ import {
   fetchAsyncRegister,
   fetchAsyncLogin,
   fetchAsyncCreateProf,
+  selectOpenSignIn,
+  selectOpenSignUp,
+  resetOpenSignUp,
+  resetOpenSignIn,
+  setOpenSignIn,
+  setOpenSignUp,
+  fetchAsyncGetProfs,
+  fetchAsyncGetMyProf,
 } from "./authSlice";
 
 import { Button } from "@chakra-ui/button";
@@ -25,11 +33,13 @@ import {
 import { FormControl } from "@chakra-ui/form-control";
 import { VStack } from "@chakra-ui/layout";
 import { IFormInput } from "../types";
+import { fetchAsyncGetComments, fetchAsyncGetPosts } from "../post/postSlice";
 
 export const Auth: VFC = () => {
+  const openSignIn = useAppSelector(selectOpenSignIn);
+  const openSignUp = useAppSelector(selectOpenSignUp);
+
   const dispatch = useAppDispatch();
-  const [isSignUpMode, setIsSignUpMode] = useState(true);
-  const [isSignInMode, setIsSignInMode] = useState(false);
 
   const schema = yup.object({
     email: yup.string().required("email is must").email("email is wrong"),
@@ -48,21 +58,31 @@ export const Auth: VFC = () => {
     if (fetchAsyncRegister.fulfilled.match(resultReg)) {
       await dispatch(fetchAsyncLogin(data));
       await dispatch(fetchAsyncCreateProf({ nickName: "anonymous" }));
+      await dispatch(fetchAsyncGetProfs());
+      await dispatch(fetchAsyncGetPosts());
+      await dispatch(fetchAsyncGetComments());
+      await dispatch(fetchAsyncGetMyProf());
     }
-    setIsSignUpMode(false);
+    dispatch(resetOpenSignUp());
   };
 
   const onSubmitLogin: SubmitHandler<IFormInput> = async (data) => {
-    await dispatch(fetchAsyncLogin(data));
-    setIsSignInMode(false);
+    const res = await dispatch(fetchAsyncLogin(data));
+    if (fetchAsyncLogin.fulfilled.match(res)) {
+      await dispatch(fetchAsyncGetProfs());
+      await dispatch(fetchAsyncGetPosts());
+      await dispatch(fetchAsyncGetComments());
+      await dispatch(fetchAsyncGetMyProf());
+    }
+    dispatch(resetOpenSignIn());
   };
 
   return (
     <>
       <Modal
-        isOpen={isSignUpMode}
+        isOpen={openSignUp}
         onClose={() => {
-          setIsSignUpMode(false);
+          dispatch(resetOpenSignUp());
         }}
       >
         <ModalOverlay />
@@ -111,8 +131,8 @@ export const Auth: VFC = () => {
               <span
                 className={styles.auth_text}
                 onClick={async () => {
-                  setIsSignInMode(true);
-                  setIsSignUpMode(false);
+                  dispatch(setOpenSignIn());
+                  dispatch(resetOpenSignUp());
                 }}
               >
                 you already have a account ?
@@ -123,9 +143,9 @@ export const Auth: VFC = () => {
       </Modal>
 
       <Modal
-        isOpen={isSignInMode}
+        isOpen={openSignIn}
         onClose={() => {
-          setIsSignInMode(false);
+          dispatch(resetOpenSignIn());
         }}
       >
         <ModalOverlay />
@@ -173,8 +193,8 @@ export const Auth: VFC = () => {
               <span
                 className={styles.auth_text}
                 onClick={async () => {
-                  setIsSignInMode(false);
-                  setIsSignUpMode(true);
+                  dispatch(resetOpenSignIn());
+                  dispatch(setOpenSignUp());
                 }}
               >
                 you don't have a account ?
